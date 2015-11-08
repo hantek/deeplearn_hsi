@@ -33,7 +33,7 @@ PIL is used to visualize weights and classification results on the whole image. 
 If you have a CUDA enabled GPU with you, that would save you a lot of time. But it is still OK to run all the experiments without GPU, at the expense of more patience.
 
 
-### Download ang prepare the datasets
+### Download and prepare the datasets
 Download the two datasets used in the paper:
  - [Pavia University scene](http://www.ehu.eus/ccwintco/index.php?title=Hyperspectral_Remote_Sensing_Scenes)
  - [Kennedy Space Center (KSC)](http://www.ehu.eus/ccwintco/index.php?title=Hyperspectral_Remote_Sensing_Scenes)
