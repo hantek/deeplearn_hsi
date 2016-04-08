@@ -1,5 +1,28 @@
 #!/usr/bin/python
 #
+# Copyright (c) 2013-2015, Zhouhan LIN
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# 
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+#
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import pdb
 import time
@@ -10,6 +33,72 @@ import theano
 import pylab as pl
 from sklearn.decomposition import PCA
 from sklearn.metrics import confusion_matrix
+
+
+# the following color map is for generating wholeimage classification figures.
+cmap = numpy.asarray( [[0, 0, 0],               
+                       [0, 205, 0],         
+                       [127, 255, 0],       
+                       [46, 139, 87],
+                       [0, 139, 0],
+                       [160, 82, 45],
+                       [0, 255, 255],
+                       [255, 255, 255],
+                       [216, 191, 216],
+                       [255, 0, 0],
+                       [139, 0, 0],
+                       [0, 0, 255],
+                       [255, 255, 0],
+                       [238, 154, 0],
+                       [85, 26, 139],
+                       [255, 127, 80]], dtype='int32')
+
+
+def result_analysis(prediction, train_truth, valid_truth, test_truth, 
+                    verbose=False):
+    assert prediction.shape == test_truth.shape
+    print "Detailed information in each category:"
+    print "                          Number of Samples"
+    print "Class No.       TRAIN   VALID   TEST    RightCount   RightRate"
+    for i in xrange(test_truth.min(), test_truth.max()+1):
+        right_prediction = ( (test_truth-prediction) == 0 )
+        right_count = numpy.sum(((test_truth==i) * right_prediction)*1)
+        print "%d\t\t%d\t%d\t%d\t%d\t%f" % \
+            (i, 
+             numpy.sum((train_truth==i)*1), 
+             numpy.sum((valid_truth==i)*1), 
+             numpy.sum((test_truth==i)*1),
+             right_count,
+             right_count * 1.0 / numpy.sum((test_truth==i)*1)
+            )
+    
+    total_right_count = numpy.sum(right_prediction*1)
+    print "Overall\t\t%d\t%d\t%d\t%d\t%f" % \
+            (train_truth.size, 
+             valid_truth.size, 
+             test_truth.size, 
+             total_right_count,
+             total_right_count * 1.0 / test_truth.size
+            )
+    
+    cm = confusion_matrix(test_truth, prediction)
+    pr_a = cm.trace()*1.0 / test_truth.size
+    pr_e = ((cm.sum(axis=0)*1.0/test_truth.size) * \
+            (cm.sum(axis=1)*1.0/test_truth.size)).sum()
+    k = (pr_a - pr_e) / (1 - pr_e)
+    print "kappa index of agreement: %f" % k
+    print "confusion matrix:"
+    print cm
+    # Show confusion matrix
+    pl.matshow(cm)
+    pl.title('Confusion matrix')
+    pl.colorbar()
+    if verbose:
+        pl.show()
+    else:
+        filename = 'conf_mtx_' + str(time.time()) + '.png'
+        pl.savefig(filename)
+
 
 #-------------------------------------------------------------------------------
 """
@@ -58,7 +147,6 @@ def scale_to_unit_interval(ndar, eps=1e-8):
     return ndar
 
 
-#-------------------------------------------------------------------------------
 def tile_raster_images(X, img_shape, tile_shape, tile_spacing=(0, 0),
                        scale_rows_to_unit_interval=True,
                        output_pixel_vals=True):
@@ -97,14 +185,6 @@ def tile_raster_images(X, img_shape, tile_shape, tile_spacing=(0, 0),
     assert len(tile_shape) == 2
     assert len(tile_spacing) == 2
 
-    # The expression below can be re-written in a more C style as
-    # follows :
-    #
-    # out_shape    = [0,0]
-    # out_shape[0] = (img_shape[0]+tile_spacing[0])*tile_shape[0] -
-    #                tile_spacing[0]
-    # out_shape[1] = (img_shape[1]+tile_spacing[1])*tile_shape[1] -
-    #                tile_spacing[1]
     out_shape = [
         (ishp + tsp) * tshp - tsp
         for ishp, tshp, tsp in zip(img_shape, tile_shape, tile_spacing)
@@ -178,74 +258,9 @@ def tile_raster_images(X, img_shape, tile_shape, tile_spacing=(0, 0),
                         tile_col * (W + Ws): tile_col * (W + Ws) + W
                     ] = this_img * c
         return out_array
-
-
 #-------------------------------------------------------------------------------
-# the following color map is for generating wholeimage classification figures.
-cmap = numpy.asarray( [[0, 0, 0],               
-                       [0, 205, 0],         
-                       [127, 255, 0],       
-                       [46, 139, 87],
-                       [0, 139, 0],
-                       [160, 82, 45],
-                       [0, 255, 255],
-                       [255, 255, 255],
-                       [216, 191, 216],
-                       [255, 0, 0],
-                       [139, 0, 0],
-                       [0, 0, 255],
-                       [255, 255, 0],
-                       [238, 154, 0],
-                       [85, 26, 139],
-                       [255, 127, 80]], dtype='int32')
 
-#-------------------------------------------------------------------------------
-def result_analysis(prediction, train_truth, valid_truth, test_truth, 
-                    verbose=False):
-    assert prediction.shape == test_truth.shape
-    print "Detailed information in each category:"
-    print "                          Number of Samples"
-    print "Class No.       TRAIN   VALID   TEST    RightCount   RightRate"
-    for i in xrange(test_truth.min(), test_truth.max()+1):
-        right_prediction = ( (test_truth-prediction) == 0 )
-        right_count = numpy.sum(((test_truth==i) * right_prediction)*1)
-        print "%d\t\t%d\t%d\t%d\t%d\t%f" % \
-            (i, 
-             numpy.sum((train_truth==i)*1), 
-             numpy.sum((valid_truth==i)*1), 
-             numpy.sum((test_truth==i)*1),
-             right_count,
-             right_count * 1.0 / numpy.sum((test_truth==i)*1)
-            )
-    
-    total_right_count = numpy.sum(right_prediction*1)
-    print "Overall\t\t%d\t%d\t%d\t%d\t%f" % \
-            (train_truth.size, 
-             valid_truth.size, 
-             test_truth.size, 
-             total_right_count,
-             total_right_count * 1.0 / test_truth.size
-            )
-    
-    cm = confusion_matrix(test_truth, prediction)
-    pr_a = cm.trace()*1.0 / test_truth.size
-    pr_e = ((cm.sum(axis=0)*1.0/test_truth.size) * \
-            (cm.sum(axis=1)*1.0/test_truth.size)).sum()
-    k = (pr_a - pr_e) / (1 - pr_e)
-    print "kappa index of agreement: %f" % k
-    print "confusion matrix:"
-    print cm
-    # Show confusion matrix
-    pl.matshow(cm)
-    pl.title('Confusion matrix')
-    pl.colorbar()
-    if verbose:
-        pl.show()
-    else:
-        filename = 'conf_mtx_' + str(time.time()) + '.png'
-        pl.savefig(filename)
 
-#-------------------------------------------------------------------------------
 def PCA_tramsform_img(img=None, n_principle=3):
     """
     This function trainsforms an HSI by 1-D PCA. PCA is fitted on the whole data
@@ -280,7 +295,7 @@ def PCA_tramsform_img(img=None, n_principle=3):
     residual = 1 - numpy.sum(energy_dist[0: n_principle])
     return reg_img, energy_dist, residual
 
-#-------------------------------------------------------------------------------
+
 def T_pca_constructor(hsi_img=None, gnd_img=None, n_principle=3, window_size=1, 
                       flag='supervised', merge=False):
     """
@@ -390,7 +405,7 @@ def T_pca_constructor(hsi_img=None, gnd_img=None, n_principle=3, window_size=1,
     
     return data_spectral, data_spatial, gndtruth, extracted_pixel_ind
 
-#-------------------------------------------------------------------------------
+
 def train_valid_test(data, ratio=[6, 2, 2], batch_size=50, random_state=None):
     """
     This function splits data into three parts, according to the "ratio" parameter
@@ -435,72 +450,7 @@ def train_valid_test(data, ratio=[6, 2, 2], batch_size=50, random_state=None):
     valid_data_y = data[1][split_mask == 'valid']-1
     test_data_x  = data[0][split_mask == 'tests', :]
     test_data_y  = data[1][split_mask == 'tests']-1
-    '''
-    #---------------------------split dataset-----------------------------------
-    features, tags = data
-    n_classes = tags.max()
-    index = numpy.arange(tags.size)
-    ratio_sum = sum(ratio)
     
-    split_mask = numpy.array(['tests', ] * data[0].shape[0])
-
-    test_features  = []
-    valid_features = []
-    train_features = []
-    test_tags  = []
-    valid_tags = []
-    train_tags = []
-    
-    for iclass in xrange(1, n_classes+1):
-        # pdb.set_trace()
-        itag_ind = index[tags == iclass]
-        itag_ind = rand_num_generator.permutation(itag_ind)
-        
-        itest_count  = \
-        numpy.round(1.0*itag_ind.size * ratio[2] / ratio_sum).astype(tags.dtype)
-        ivalid_count = \
-        numpy.round(1.0*itag_ind.size * ratio[1] / ratio_sum).astype(tags.dtype)
-        
-        itest_ind  = itag_ind[:itest_count]
-        ivalid_ind = itag_ind[itest_count:(itest_count+ivalid_count)]
-        itrain_ind = itag_ind[(itest_count+ivalid_count):]
-        
-        itest_features  = features[itest_ind,:]
-        ivalid_features = features[ivalid_ind,:]
-        itrain_features = features[itrain_ind,:]
-        test_features.append(itest_features)
-        valid_features.append(ivalid_features)
-        train_features.append(itrain_features)
-        
-        itest_tags  = tags[itest_ind,:]
-        ivalid_tags = tags[ivalid_ind,:]
-        itrain_tags = tags[itrain_ind,:]
-        test_tags.append(itest_tags)
-        valid_tags.append(ivalid_tags)
-        train_tags.append(itrain_tags)
-        
-        split_mask[ivalid_ind] = 'valid'
-        split_mask[itrain_ind] = 'train'
-        
-    test_features  = numpy.vstack(test_features)
-    valid_features = numpy.vstack(valid_features)
-    train_features = numpy.vstack(train_features)
-    test_tags  = numpy.hstack(test_tags)
-    valid_tags = numpy.hstack(valid_tags)
-    train_tags = numpy.hstack(train_tags)
-    
-    # random permute the tags
-    index = rand_num_generator.permutation(numpy.arange(test_tags.size))
-    test_data_y = test_tags[index]
-    test_data_x = test_features[index,:]
-    index = rand_num_generator.permutation(numpy.arange(valid_tags.size))
-    valid_data_y = valid_tags[index]
-    valid_data_x = valid_features[index,:]
-    index = rand_num_generator.permutation(numpy.arange(train_tags.size))
-    train_data_y = train_tags[index]
-    train_data_x = train_features[index,:]
-    #---------------------------------------------------------------------------
-    '''
     # tackle the batch size mismatch problem
     mis_match = train_data_x.shape[0] % batch_size
     if mis_match != 0:
@@ -524,14 +474,15 @@ def train_valid_test(data, ratio=[6, 2, 2], batch_size=50, random_state=None):
            [valid_data_x, valid_data_y], \
            [test_data_x , test_data_y], split_mask
 
-#-------------------------------------------------------------------------------
+
 def prepare_data(hsi_img=None, gnd_img=None, window_size=7, n_principle=3, 
                  batch_size=50, merge=False, ratio=[6, 2, 2]):
     """
     Process the data from file path to splited train-valid-test sets; Binded in 
     dataset_spectral and dataset_spatial respectively.
     
-    Parameters:
+    Parameters
+    ----------
     
     hsi_img=None:       3-D numpy.ndarray, dtype=float, storing initial 
                         hyperspectral image data.
@@ -547,19 +498,15 @@ def prepare_data(hsi_img=None, gnd_img=None, window_size=7, n_principle=3,
                         merge==False, the returned dataset_spectral and 
                         dataset_spatial will have spectral and spatial information
                         only, respectively.
-    Return:
+    
+    Return
+    ------
     
     dataset_spectral:   
     dataset_spatial:    
     extracted_pixel_ind:
     split_mask:
     """
-    # gnd_mask:           A matrix the same size to ground matrix, containing flags
-    #                     about pixel usage:
-    #                         0 for NOT chozen;
-    #                         1 for chozen as training;
-    #                         2 for chozen as validation;
-    #                         3 for chozen as testing;
 
     data_spectral, data_spatial, gndtruth, extracted_pixel_ind = \
         T_pca_constructor(hsi_img=hsi_img, gnd_img=gnd_img, n_principle=n_principle,
@@ -603,6 +550,7 @@ def prepare_data(hsi_img=None, gnd_img=None, window_size=7, n_principle=3,
     
     return dataset_spectral, dataset_spatial, extracted_pixel_ind, split_mask
 
+
 if __name__ == '__main__':
     """ Sample usage. """
     print '... Testing function result_analysis'
@@ -639,15 +587,6 @@ if __name__ == '__main__':
     data = sio.loadmat(gnd_file)
     gnd_img = data['Kennedy_groundtruth']
     gnd_img = gnd_img.astype(numpy.int32)
-
-    #-for debug use-------------------------------------------------------------
-    # pca_img, _, residual = PCA_tramsform_img(img=img, n_principle=3)
-    # print residual
-    # sio.savemat('pca_img.mat', {'pca_ksc_img': pca_img})
-    # img = numpy.arange(300, dtype=theano.config.floatX).reshape(10, 10, 3)
-    # gnd_img = numpy.zeros((10, 10), dtype='int32')
-    # gnd_img[[1, 2, 3, 7, 5], [1, 3, 5, 7, 7]] = 2
-    #---------------------------------------------------------------------------
 
     print '... spliting train-valid-test sets'
     dataset_spectral, dataset_spatial, extracted_pixel_ind, split_mask = \
@@ -709,44 +648,23 @@ if __name__ == '__main__':
 
     if raw_input('Do you want to save results to data.mat (Y/n)? ') == 'Y':
         print '... saving datasets'
-        sio.savemat('data.mat', {'spectral_train_x': dataset_spectral[0][0].get_value(),
-                                 'spectral_train_y': dataset_spectral[0][1].get_value(),
-                                 'spectral_valid_x': dataset_spectral[1][0].get_value(),
-                                 'spectral_valid_y': dataset_spectral[1][1].get_value(),
-                                 'spectral_test_x':  dataset_spectral[2][0].get_value(),
-                                 'spectral_test_y':  dataset_spectral[2][1].get_value(),
-                                 
-                                 'spatial_train_x':  dataset_spatial[0][0].get_value(),
-                                 'spatial_train_y':  dataset_spatial[0][1].get_value(),
-                                 'spatial_valid_x':  dataset_spatial[1][0].get_value(),
-                                 'spatial_valid_y':  dataset_spatial[1][1].get_value(),
-                                 'spatial_test_x':   dataset_spatial[2][0].get_value(),
-                                 'spatial_test_y':   dataset_spatial[2][1].get_value(),
-                                 
-                                 'extracted_pixel_ind': extracted_pixel_ind,
-                                 'split_mask':       split_mask})
+        sio.savemat('data.mat', {
+            'spectral_train_x': dataset_spectral[0][0].get_value(),
+            'spectral_train_y': dataset_spectral[0][1].get_value(),
+            'spectral_valid_x': dataset_spectral[1][0].get_value(),
+            'spectral_valid_y': dataset_spectral[1][1].get_value(),
+            'spectral_test_x':  dataset_spectral[2][0].get_value(),
+            'spectral_test_y':  dataset_spectral[2][1].get_value(),
+
+            'spatial_train_x':  dataset_spatial[0][0].get_value(),
+            'spatial_train_y':  dataset_spatial[0][1].get_value(),
+            'spatial_valid_x':  dataset_spatial[1][0].get_value(),
+            'spatial_valid_y':  dataset_spatial[1][1].get_value(),
+            'spatial_test_x':   dataset_spatial[2][0].get_value(),
+            'spatial_test_y':   dataset_spatial[2][1].get_value(),
+              
+            'extracted_pixel_ind': extracted_pixel_ind,
+            'split_mask':       split_mask})
 
         
     print 'Done.'
-
-
-
-
-
-
-    '''
-    *****old implementation of the part "split dataset"*****
-    
-    random_mask = rand_num_generator.random_integers(1, sum(ratio), data[0].shape[0])
-    split_mask = numpy.array(['tests', ] * data[0].shape[0])
-    split_mask[random_mask <= ratio[0]] = 'train'
-    split_mask[(random_mask <= ratio[1]+ratio[0]) * (random_mask > ratio[0])] = 'valid'
-    
-    train_data_x = data[0][split_mask == 'train', :]
-    train_data_y = data[1][split_mask == 'train']-1
-    valid_data_x = data[0][split_mask == 'valid', :]
-    valid_data_y = data[1][split_mask == 'valid']-1
-    test_data_x  = data[0][split_mask == 'tests', :]
-    test_data_y  = data[1][split_mask == 'tests']-1
-    '''
-    

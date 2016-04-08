@@ -3,6 +3,7 @@
 This repository guarantees you to reproduce the results reported in the following two papers:
  - [Spectral-spatial classification of hyperspectral image using autoencoders](http://ieeexplore.ieee.org/xpl/login.jsp?tp=&arnumber=6782778&url=http%3A%2F%2Fieeexplore.ieee.org%2Fiel7%2F6777690%2F6782769%2F06782778.pdf%3Farnumber%3D6782778)
  - [Deep Learning-Based Classification of Hyperspectral Data](http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=6844831)
+If you think it helpful, we would appreciate if you cite these papers in your work.
 
 ## Setup
 ### Install Dependencies
