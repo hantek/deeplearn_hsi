@@ -36,9 +36,16 @@ If you have a CUDA enabled GPU with you, that would save you a lot of time. But 
 
 
 ### Download and prepare the datasets
-Download the two datasets used in the paper:
+Download the two datasets used in the paper by typing the corresponding commands into your terminal:
  - [Pavia University scene](http://www.ehu.eus/ccwintco/index.php?title=Hyperspectral_Remote_Sensing_Scenes)
+        
+        wget http://www.ehu.eus/ccwintco/uploads/e/ee/PaviaU.mat
+        wget http://www.ehu.eus/ccwintco/uploads/5/50/PaviaU_gt.mat
+
  - [Kennedy Space Center (KSC)](http://www.ehu.eus/ccwintco/index.php?title=Hyperspectral_Remote_Sensing_Scenes)
+
+        wget http://www.ehu.es/ccwintco/uploads/2/26/KSC.mat
+        wget http://www.ehu.es/ccwintco/uploads/a/a6/KSC_gt.mat
 
 Change the loading directory in each .py file to wherever you store your datasets.
 

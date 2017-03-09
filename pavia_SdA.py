@@ -15,7 +15,8 @@ import PIL.Image
 from SdA import SdA
 from hsi_utils import *
 
-
+import pdb
+pdb.set_trace()
 
 
 cmap = numpy.asarray( [[0, 0, 0],               
@@ -32,15 +33,15 @@ cmap = numpy.asarray( [[0, 0, 0],
 
 
 # load .mat files
-hsi_file = u'/home/hantek/data/hsi_data/pavia/Pavia.mat'
-gnd_file = u'/home/hantek/data/hsi_data/pavia/Pavia_groundtruth.mat'
+hsi_file = u'/home/hantek/data/hsi_data/pavia/PaviaU.mat'
+gnd_file = u'/home/hantek/data/hsi_data/pavia/PaviaU_gt.mat'
 data = sio.loadmat(hsi_file)
-img = scale_to_unit_interval(data['Pavia'].astype(theano.config.floatX))
+img = scale_to_unit_interval(data['paviaU'].astype(theano.config.floatX))
 width = img.shape[0]
 height = img.shape[1]
 bands = img.shape[2]
 data = sio.loadmat(gnd_file)
-gnd_img = data['groundtruth'].astype(numpy.int32)
+gnd_img = data['paviaU_gt'].astype(numpy.int32)
 
 # extract supervised spectral data
 datasets, _, _, _ = \

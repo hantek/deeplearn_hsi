@@ -34,6 +34,8 @@ import pylab as pl
 from sklearn.decomposition import PCA
 from sklearn.metrics import confusion_matrix
 
+import pdb
+pdb.set_trace()
 
 # the following color map is for generating wholeimage classification figures.
 cmap = numpy.asarray( [[0, 0, 0],               

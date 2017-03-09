@@ -279,15 +279,15 @@ def run_sda(datasets=None, batch_size=100,
 
 if __name__ == '__main__':
     print '... loanding data'
-    hsi_file = u'/home/hantek/data/hsi_data/kennedy/Kennedy_denoise.mat'
-    gnd_file = u'/home/hantek/data/hsi_data/kennedy/Kennedy_groundtruth.mat'
+    hsi_file = u'/home/hantek/data/hsi_data/kennedy/KSC.mat'
+    gnd_file = u'/home/hantek/data/hsi_data/kennedy/KSC_gt.mat'
     data = sio.loadmat(hsi_file)
-    img = scale_to_unit_interval(data['Kennedy176'].astype(theano.config.floatX))
+    img = scale_to_unit_interval(data['KSC'].astype(theano.config.floatX))
     width = img.shape[0]
     height = img.shape[1]
     bands = img.shape[2]
     data = sio.loadmat(gnd_file)
-    gnd_img = data['Kennedy_groundtruth']
+    gnd_img = data['KSC_gt']
     gnd_img = gnd_img.astype(numpy.int32)
 
     print '... extracting train-valid-test sets'
