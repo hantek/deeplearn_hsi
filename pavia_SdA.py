@@ -1,6 +1,5 @@
 import os
 import sys
-import pdb
 import time
 import scipy.io as sio
 import numpy
@@ -14,10 +13,6 @@ import PIL.Image
 
 from SdA import SdA
 from hsi_utils import *
-
-import pdb
-pdb.set_trace()
-
 
 cmap = numpy.asarray( [[0, 0, 0],               
                        [192, 192, 192],         
