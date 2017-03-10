@@ -5,7 +5,6 @@ __version__ = "1.0"
 import os
 import sys
 import time
-import pdb
 import scipy
 import scipy.io as sio
 import numpy
@@ -99,7 +98,6 @@ for i in xrange(sda.n_layers):
     for epoch in xrange(pretraining_epochs):
         # go through the training set
         c = []
-        # pdb.set_trace()
         for batch_index in xrange(n_train_batches):
             c.append(pretraining_fns[i](index=batch_index,
                      corruption=corruption_levels[i],
