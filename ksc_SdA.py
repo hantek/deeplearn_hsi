@@ -37,8 +37,8 @@ cmap = numpy.asarray( [[0, 0, 0],
 
 
 # load .mat files
-hsi_file = u'/home/hantek/data/hsi_data/kennedy/KSC.mat'
-gnd_file = u'/home/hantek/data/hsi_data/kennedy/KSC_gt.mat'
+hsi_file = u'/data/milatmp1/linzhou/deeplearn_hsi/KSC.mat'
+gnd_file = u'/data/milatmp1/linzhou/deeplearn_hsi/KSC_gt.mat'
 data = sio.loadmat(hsi_file)
 img = scale_to_unit_interval(data['KSC'].astype(theano.config.floatX))
 width = img.shape[0]
@@ -46,6 +46,9 @@ height = img.shape[1]
 bands = img.shape[2]
 data = sio.loadmat(gnd_file)
 gnd_img = data['KSC_gt'].astype(numpy.int32)
+
+pdb.set_trace()
+
 
 # extract supervised spectral data
 datasets, _, _, _ = \
@@ -55,9 +58,9 @@ datasets, _, _, _ = \
 
 ############################################################################
 # build model
-finetune_lr=0.05
-pretraining_epochs=3300
-pretrain_lr=0.6
+finetune_lr=0.5
+pretraining_epochs=300  # 3300
+pretrain_lr=6
 training_epochs=400000
 batch_size=100
 hidden_layers_sizes=[20]
